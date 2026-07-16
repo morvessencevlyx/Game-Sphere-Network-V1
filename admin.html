@@ -161,6 +161,36 @@
         }
         .settings-box .btn-primary { width: auto; padding: 10px 20px; }
 
+        /* Game Management */
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .game-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+            border-left: 4px solid #f1c40f;
+        }
+        .game-stat-card h3 { color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .game-stat-card p { font-size: 28px; font-weight: bold; color: #2c3e50; }
+        .game-stat-card .reward { color: #2ecc71; font-size: 18px; }
+
+        .game-settings {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        .game-settings h3 { color: #2c3e50; margin-bottom: 10px; }
+        .game-settings .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+        .game-settings input { padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; flex: 1; min-width: 100px; }
+        .game-settings .btn-primary { width: auto; padding: 10px 20px; }
+
         @media (max-width: 768px) {
             .dashboard { flex-direction: column; }
             .sidebar { width: 100%; min-height: auto; }
@@ -192,6 +222,7 @@
             <a onclick="showSection('users')">👥 Users</a>
             <a onclick="showSection('withdrawals')">💵 Withdrawals</a>
             <a onclick="showSection('announcements')">📢 Announcements</a>
+            <a onclick="showSection('game')" style="color:#f1c40f;">🎮 Game</a>
             <a onclick="showSection('settings')">⚙️ Settings</a>
         </aside>
 
@@ -212,6 +243,7 @@
                         <button onclick="showSection('users')" class="btn-secondary">👥 Users</button>
                         <button onclick="showSection('withdrawals')" class="btn-secondary">💵 Withdrawals</button>
                         <button onclick="showSection('announcements')" class="btn-secondary">📢 Post</button>
+                        <button onclick="showSection('game')" class="btn-secondary" style="background:#f39c12;">🎮 Game</button>
                     </div>
                 </div>
             </div>
@@ -254,6 +286,66 @@
                     </form>
                 </div>
                 <div id="adminAnnouncementList" class="table-container"></div>
+            </div>
+
+            <!-- GAME MANAGEMENT -->
+            <div id="game" class="section">
+                <h2>🎮 Game Management</h2>
+
+                <!-- Game Stats -->
+                <div class="game-stats">
+                    <div class="game-stat-card">
+                        <h3>📚 Total Questions</h3>
+                        <p id="totalQuestions">25</p>
+                    </div>
+                    <div class="game-stat-card">
+                        <h3>🎯 Categories</h3>
+                        <p id="totalCategories">5</p>
+                    </div>
+                    <div class="game-stat-card">
+                        <h3>💰 Reward Per Correct</h3>
+                        <p id="rewardPerCorrect">₱5</p>
+                    </div>
+                    <div class="game-stat-card">
+                        <h3>⏱️ Response Time</h3>
+                        <p id="responseTime">20s</p>
+                    </div>
+                </div>
+
+                <!-- Game Settings -->
+                <div class="game-settings">
+                    <h3>⚙️ Game Settings</h3>
+                    <div class="row">
+                        <label style="min-width:100px;">Reward per correct:</label>
+                        <input type="number" id="gameReward" value="5" step="1" min="1" style="max-width:120px;">
+                        <span>₱</span>
+                        <button onclick="updateGameReward()" class="btn-primary" style="width:auto;">Update</button>
+                    </div>
+                    <div class="row" style="margin-top:10px;">
+                        <label style="min-width:100px;">Response time:</label>
+                        <input type="number" id="gameResponseTime" value="20" step="5" min="5" style="max-width:120px;">
+                        <span>seconds</span>
+                        <button onclick="updateGameResponseTime()" class="btn-primary" style="width:auto;">Update</button>
+                    </div>
+                </div>
+
+                <!-- Category Management -->
+                <div class="game-settings">
+                    <h3>📚 Categories & Questions</h3>
+                    <p style="color:#7f8c8d; font-size:14px; margin-bottom:10px;">
+                        Manage the trivia categories and questions below.
+                    </p>
+                    <div id="categoryManagement" class="table-container"></div>
+                </div>
+
+                <!-- Reset Game -->
+                <div class="game-settings" style="border-left:4px solid #e74c3c;">
+                    <h3 style="color:#e74c3c;">⚠️ Danger Zone</h3>
+                    <div class="row">
+                        <button onclick="resetGameData()" class="btn-danger" style="padding:12px 25px; border:none; border-radius:6px; cursor:pointer; font-weight:600;">🔄 Reset Game Progress</button>
+                        <button onclick="resetAllGameData()" class="btn-danger" style="padding:12px 25px; border:none; border-radius:6px; cursor:pointer; font-weight:600; background:#c0392b;">🗑️ Reset All Game Data</button>
+                    </div>
+                </div>
             </div>
 
             <!-- SETTINGS -->
@@ -353,6 +445,7 @@
             loadUsers();
             loadWithdrawals();
             loadAdminAnnouncements();
+            loadGameManagement();
             checkPromo();
         };
 
@@ -510,6 +603,94 @@
             alert('✅ Deleted');
         }
 
+        // ============================================
+        // GAME MANAGEMENT
+        // ============================================
+
+        function loadGameManagement() {
+            // Load game stats
+            const reward = localStorage.getItem('gameReward') || '5';
+            const responseTime = localStorage.getItem('gameResponseTime') || '20';
+            document.getElementById('rewardPerCorrect').textContent = '₱' + reward;
+            document.getElementById('responseTime').textContent = responseTime + 's';
+            document.getElementById('gameReward').value = reward;
+            document.getElementById('gameResponseTime').value = responseTime;
+
+            // Load categories
+            const categories = [
+                { id: 'catch', name: '🧠 WHAT\'S THE CATCH?', questions: 5 },
+                { id: 'identity', name: '🎭 SECRET IDENTITY', questions: 5 },
+                { id: 'plot', name: '🎲 PLOT TWIST!', questions: 5 },
+                { id: 'logic', name: '🧩 LOGIC TRAP', questions: 5 },
+                { id: 'mind', name: '🧠 MIND BENDER', questions: 5 }
+            ];
+
+            const container = document.getElementById('categoryManagement');
+            let html = `<table><tr><th>Category</th><th>Questions</th><th>Status</th></tr>`;
+            categories.forEach(c => {
+                const completed = localStorage.getItem('completed_' + c.id) === 'true';
+                html += `<tr>
+                    <td>${c.name}</td>
+                    <td>${c.questions}</td>
+                    <td>${completed ? '✅ Completed' : '⏳ Pending'}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function updateGameReward() {
+            const reward = document.getElementById('gameReward').value;
+            if (!reward || isNaN(reward) || parseInt(reward) < 1) {
+                alert('Please enter a valid reward amount (minimum ₱1)');
+                return;
+            }
+            localStorage.setItem('gameReward', reward);
+            document.getElementById('rewardPerCorrect').textContent = '₱' + reward;
+            alert('✅ Game reward updated to ₱' + reward + ' per correct answer!');
+        }
+
+        function updateGameResponseTime() {
+            const time = document.getElementById('gameResponseTime').value;
+            if (!time || isNaN(time) || parseInt(time) < 5) {
+                alert('Please enter a valid time (minimum 5 seconds)');
+                return;
+            }
+            localStorage.setItem('gameResponseTime', time);
+            document.getElementById('responseTime').textContent = time + 's';
+            alert('✅ Response time updated to ' + time + ' seconds!');
+        }
+
+        function resetGameData() {
+            if (!confirm('Reset all game progress? This will reset all categories.')) return;
+            const categories = ['catch', 'identity', 'plot', 'logic', 'mind'];
+            categories.forEach(c => {
+                localStorage.removeItem('completed_' + c);
+            });
+            localStorage.removeItem('gameScore');
+            loadGameManagement();
+            alert('✅ Game progress reset!');
+        }
+
+        function resetAllGameData() {
+            if (!confirm('⚠️ WARNING: This will delete ALL game data including questions and categories!\n\nContinue?')) return;
+            if (!confirm('Type "DELETE" to confirm')) return;
+            const confirmText = prompt('Type "DELETE" to confirm:');
+            if (confirmText !== 'DELETE') return;
+            localStorage.removeItem('gameData');
+            localStorage.removeItem('gameScore');
+            const categories = ['catch', 'identity', 'plot', 'logic', 'mind'];
+            categories.forEach(c => {
+                localStorage.removeItem('completed_' + c);
+            });
+            alert('✅ All game data reset!');
+            loadGameManagement();
+        }
+
+        // ============================================
+        // SETTINGS
+        // ============================================
+
         function updateRate() {
             const rate = document.getElementById('gsnRate').value;
             if (!rate || isNaN(rate) || parseFloat(rate) <= 0) { alert('Invalid rate'); return; }
@@ -601,6 +782,7 @@
                 case 'users': loadUsers(); break;
                 case 'withdrawals': loadWithdrawals(); break;
                 case 'announcements': loadAdminAnnouncements(); break;
+                case 'game': loadGameManagement(); break;
                 case 'settings': checkPromo(); break;
             }
         }
@@ -610,4 +792,4 @@
         }
     </script>
 </body>
-                          </html>
+                    </html>
