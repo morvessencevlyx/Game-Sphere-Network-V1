@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Game Sphere Network</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+
+        .navbar {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-brand { font-size: 22px; font-weight: bold; }
+        .nav-user { display: flex; align-items: center; gap: 15px; font-size: 14px; }
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-logout:hover { background: #c0392b; }
+
+        .dashboard { display: flex; min-height: calc(100vh - 70px); }
+
+        .sidebar {
+            width: 220px;
+            background: #2c3e50;
+            padding: 15px 0;
+            min-height: 100%;
+            flex-shrink: 0;
+        }
+        .sidebar a {
+            display: block;
+            padding: 12px 22px;
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+        .sidebar a:hover { background: #34495e; }
+        .sidebar a.active {
+            background: #34495e;
+            border-left-color: #3498db;
+            font-weight: 600;
+        }
+
+        .main { flex: 1; padding: 25px; background: #f8f9fa; overflow-x: auto; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .section h2 { color: #2c3e50; margin-bottom: 20px; font-size: 22px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0 25px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .stat-card h3 { color: #7f8c8d; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card p { font-size: 24px; font-weight: bold; color: #2c3e50; }
+        .stat-card p.orange { color: #f39c12; }
+        .stat-card p.green { color: #2ecc71; }
+        .stat-card p.blue { color: #3498db; }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-secondary {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .btn-secondary:hover { background: #1a252f; }
+        .btn-success { background: #2ecc71; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-success:hover { background: #27ae60; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #ecf0f1; padding: 10px 12px; text-align: left; font-weight: 600; }
+        td { padding: 8px 12px; border-bottom: 1px solid #ecf0f1; }
+        tr:hover { background: #f8f9fa; }
+
+        .status-pending { color: #f39c12; font-weight: 600; }
+        .status-approved { color: #3498db; font-weight: 600; }
+        .status-released { color: #2ecc71; font-weight: 600; }
+        .status-rejected { color: #e74c3c; font-weight: 600; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #2c3e50; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;
+            transition: 0.3s; background: #fafafa;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #3498db; outline: none; background: white;
+        }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+
+        .admin-form { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .action-buttons button { flex: 1; min-width: 120px; }
+        .quick-actions { background: white; padding: 20px; border-radius: 12px; margin-top: 20px; }
+
+        .announcement-item {
+            background: white; padding: 15px 20px; margin-bottom: 12px; border-radius: 8px;
+            border-left: 4px solid #3498db; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .announcement-item.priority-1 { border-left-color: #e74c3c; background: #fff5f5; }
+        .announcement-item.priority-2 { border-left-color: #f39c12; background: #fffcf0; }
+        .announcement-item.priority-3 { border-left-color: #2ecc71; background: #f0fff4; }
+        .announcement-item h4 { margin-bottom: 5px; color: #2c3e50; }
+        .announcement-item small { color: #7f8c8d; font-size: 12px; }
+
+        .settings-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+        .settings-box .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+        .settings-box input[type="number"], .settings-box input[type="date"] {
+            padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; flex: 1; min-width: 120px;
+        }
+        .settings-box .btn-primary { width: auto; padding: 10px 20px; }
+
+        @media (max-width: 768px) {
+            .dashboard { flex-direction: column; }
+            .sidebar { width: 100%; min-height: auto; }
+            .sidebar a { display: inline-block; padding: 8px 14px; font-size: 12px; border-left: none; border-bottom: 3px solid transparent; }
+            .sidebar a.active { border-bottom-color: #3498db; border-left: none; }
+            .main { padding: 15px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 10px; padding: 12px 15px; }
+            .nav-user { width: 100%; justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">🌠 GSN Admin</div>
+        <div class="nav-user">
+            <span id="adminName">Admin</span>
+            <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+    </nav>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <a class="active" onclick="showSection('overview')">📊 Overview</a>
+            <a onclick="showSection('users')">👥 Users</a>
+            <a onclick="showSection('withdrawals')">💵 Withdrawals</a>
+            <a onclick="showSection('announcements')">📢 Announcements</a>
+            <a onclick="showSection('settings')">⚙️ Settings</a>
+        </aside>
+
+        <div class="main">
+
+            <!-- OVERVIEW -->
+            <div id="overview" class="section active">
+                <h2>📊 Admin Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card"><h3>👥 Members</h3><p id="totalMembers" class="blue">0</p></div>
+                    <div class="stat-card"><h3>⏳ Pending</h3><p id="pendingWithdrawals" class="orange">0</p></div>
+                    <div class="stat-card"><h3>💰 Revenue</h3><p id="totalRevenue" class="green">₱0</p></div>
+                    <div class="stat-card"><h3>✅ Paid</h3><p id="membershipPaidCount" class="blue">0</p></div>
+                </div>
+                <div class="quick-actions">
+                    <h3>⚡ Quick Actions</h3>
+                    <div class="action-buttons">
+                        <button onclick="showSection('users')" class="btn-secondary">👥 Users</button>
+                        <button onclick="showSection('withdrawals')" class="btn-secondary">💵 Withdrawals</button>
+                        <button onclick="showSection('announcements')" class="btn-secondary">📢 Post</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USERS -->
+            <div id="users" class="section">
+                <h2>👥 User Management</h2>
+                <div id="userList" class="table-container"></div>
+            </div>
+
+            <!-- WITHDRAWALS -->
+            <div id="withdrawals" class="section">
+                <h2>💵 Withdrawal Management</h2>
+                <div id="withdrawalList" class="table-container"></div>
+            </div>
+
+            <!-- ANNOUNCEMENTS -->
+            <div id="announcements" class="section">
+                <h2>📢 Announcements</h2>
+                <div class="admin-form">
+                    <h3>Create New</h3>
+                    <form onsubmit="postAnnouncement(event)">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="annTitle" placeholder="Title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Content</label>
+                            <textarea id="annContent" placeholder="Content" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="annPriority">
+                                <option value="1">🔴 High</option>
+                                <option value="2" selected>🟡 Medium</option>
+                                <option value="3">🟢 Low</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">📢 Post</button>
+                    </form>
+                </div>
+                <div id="adminAnnouncementList" class="table-container"></div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div id="settings" class="section">
+                <h2>⚙️ Settings</h2>
+                <div class="settings-box">
+                    <h3>💰 GSN Rate</h3>
+                    <p>Current: <strong id="currentRate">₱1</strong> per click</p>
+                    <div class="row">
+                        <input type="number" id="gsnRate" value="1" step="0.1" min="0.5">
+                        <button onclick="updateRate()" class="btn-primary">Update</button>
+                    </div>
+                </div>
+                <div class="settings-box">
+                    <h3>🎉 Birthday Promo</h3>
+                    <div class="row">
+                        <input type="date" id="promoStart" value="2026-07-11">
+                        <input type="date" id="promoEnd" value="2026-08-20">
+                        <button onclick="updatePromo()" class="btn-primary">Update</button>
+                    </div>
+                    <p id="promoStatus" style="margin-top:10px; color:#2ecc71;">✅ Promo Active</p>
+                </div>
+                <div class="settings-box">
+                    <h3>🔄 Data</h3>
+                    <div class="row">
+                        <button onclick="exportData()" class="btn-secondary">📥 Export</button>
+                        <button onclick="importData()" class="btn-secondary">📤 Import</button>
+                        <button onclick="clearData()" class="btn-danger" style="padding:10px 20px; border:none; border-radius:6px; cursor:pointer;">🗑️ Clear All</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ===== DATABASE =====
+        const DB = {
+            getAll: function(c) {
+                try { const d = localStorage.getItem(c); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+            },
+            saveAll: function(c, d) { localStorage.setItem(c, JSON.stringify(d)); },
+            findById: function(c, id) { return this.getAll(c).find(i => i.id === id) || null; },
+            findByField: function(c, f, v) { return this.getAll(c).find(i => i[f] === v) || null; },
+            insert: function(c, r) {
+                const d = this.getAll(c);
+                const prefix = c === 'users' ? 'USR' : c === 'withdrawals' ? 'WD' : 'AN';
+                r.id = prefix + '-' + String(d.length + 1).padStart(4, '0');
+                d.push(r);
+                this.saveAll(c, d);
+                return r;
+            },
+            update: function(c, id, updates) {
+                const d = this.getAll(c);
+                const idx = d.findIndex(i => i.id === id);
+                if (idx !== -1) { d[idx] = { ...d[idx], ...updates }; this.saveAll(c, d); return d[idx]; }
+                return null;
+            },
+            delete: function(c, id) {
+                let d = this.getAll(c);
+                d = d.filter(i => i.id !== id);
+                this.saveAll(c, d);
+                return true;
+            }
+        };
+
+        // ===== INIT =====
+        function initDB() {
+            if (localStorage.getItem('initiated') === 'true') return;
+            const admin = {
+                id: 'USR-0001', username: 'admin', email: 'admin@gamesphere.com', password: 'admin123',
+                fullName: 'Admin', role: 'admin', balance: 0, membershipPaid: 'yes', membershipType: 'full',
+                registrationDate: new Date().toISOString(), isBanned: 'no', violationCount: 0,
+                referralCode: 'ADMIN001', totalReferrals: 0, points: 0, withdrawalCount: 0
+            };
+            DB.insert('users', admin);
+            const demo = {
+                id: 'USR-0002', username: 'demo', email: 'demo@gamesphere.com', password: 'demopass',
+                fullName: 'Demo User', role: 'member', balance: 150, membershipPaid: 'yes', membershipType: 'full',
+                registrationDate: new Date().toISOString(), isBanned: 'no', violationCount: 0,
+                referralCode: 'DEMO001', totalReferrals: 2, points: 250, withdrawalCount: 0
+            };
+            DB.insert('users', demo);
+            localStorage.setItem('initiated', 'true');
+        }
+        initDB();
+
+        let currentUser = null;
+
+        window.onload = function() {
+            const data = localStorage.getItem('currentUser');
+            if (!data) { window.location.href = 'login.html'; return; }
+            currentUser = JSON.parse(data);
+            if (currentUser.role !== 'admin') { window.location.href = 'member.html'; return; }
+            document.getElementById('adminName').textContent = currentUser.username + ' (Admin)';
+            loadOverview();
+            loadUsers();
+            loadWithdrawals();
+            loadAdminAnnouncements();
+            checkPromo();
+        };
+
+        function loadOverview() {
+            const users = DB.getAll('users').filter(u => u.role === 'member');
+            const wds = DB.getAll('withdrawals');
+            const pending = wds.filter(w => w.status === 'pending');
+            const paid = users.filter(u => u.membershipPaid === 'yes');
+            let revenue = users.reduce((sum, u) => sum + u.balance, 0);
+            document.getElementById('totalMembers').textContent = users.length;
+            document.getElementById('pendingWithdrawals').textContent = pending.length;
+            document.getElementById('totalRevenue').textContent = '₱' + revenue.toFixed(2);
+            document.getElementById('membershipPaidCount').textContent = paid.length;
+        }
+
+        function loadUsers() {
+            const users = DB.getAll('users').filter(u => u.role === 'member');
+            const list = document.getElementById('userList');
+            if (users.length === 0) { list.innerHTML = '<p>No members.</p>'; return; }
+            let html = `<table><tr><th>Username</th><th>Email</th><th>Balance</th><th>Points</th><th>Membership</th><th>Status</th><th>Actions</th></tr>`;
+            users.forEach(u => {
+                html += `<tr>
+                    <td><strong>${u.username}</strong></td>
+                    <td>${u.email}</td>
+                    <td>₱${u.balance.toFixed(2)}</td>
+                    <td>${u.points}</td>
+                    <td>${u.membershipPaid === 'yes' ? '✅' : '❌'}</td>
+                    <td>${u.isBanned === 'yes' ? '⛔ Banned' : '✅ Active'}</td>
+                    <td>
+                        <button onclick="toggleBan('${u.id}')" class="btn-sm ${u.isBanned === 'yes' ? 'btn-success' : 'btn-danger'}">${u.isBanned === 'yes' ? 'Unban' : 'Ban'}</button>
+                        <button onclick="addBalance('${u.id}')" class="btn-sm btn-success">+₱</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</table>';
+            list.innerHTML = html;
+        }
+
+        function toggleBan(id) {
+            const u = DB.findById('users', id);
+            if (!u) return;
+            const newStatus = u.isBanned === 'yes' ? 'no' : 'yes';
+            if (newStatus === 'yes' && !confirm('Ban this user?')) return;
+            DB.update('users', id, { isBanned: newStatus });
+            loadUsers();
+            loadOverview();
+            alert('User ' + (newStatus === 'yes' ? 'banned' : 'unbanned'));
+        }
+
+        function addBalance(id) {
+            const amount = prompt('Enter amount (₱):');
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
+            const u = DB.findById('users', id);
+            if (!u) return;
+            DB.update('users', id, { balance: u.balance + parseFloat(amount) });
+            loadUsers();
+            loadOverview();
+            alert('✅ ₱' + amount + ' added');
+        }
+
+        function loadWithdrawals() {
+            const wds = DB.getAll('withdrawals').sort((a,b) => new Date(b.requestDate) - new Date(a.requestDate));
+            const list = document.getElementById('withdrawalList');
+            if (wds.length === 0) { list.innerHTML = '<p>No withdrawals.</p>'; return; }
+            let html = `<table><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr>`;
+            wds.forEach(w => {
+                const u = DB.findById('users', w.idUser);
+                const statusClass = 'status-' + w.status;
+                let actions = '';
+                if (w.status === 'pending') {
+                    actions = `<button onclick="approveWD('${w.id}')" class="btn-sm btn-success">✅</button>
+                               <button onclick="rejectWD('${w.id}')" class="btn-sm btn-danger">❌</button>`;
+                } else if (w.status === 'approved') {
+                    actions = `<button onclick="releaseWD('${w.id}')" class="btn-sm btn-success">📤</button>`;
+                } else if (w.status === 'released') {
+                    actions = '✅ Released';
+                } else {
+                    actions = '❌ Rejected';
+                }
+                html += `<tr>
+                    <td>${u ? u.username : 'Unknown'}</td>
+                    <td>₱${w.amount}</td>
+                    <td class="${statusClass}">${w.status.toUpperCase()}</td>
+                    <td>${new Date(w.requestDate).toLocaleDateString()}</td>
+                    <td>${actions}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            list.innerHTML = html;
+        }
+
+        function approveWD(id) {
+            DB.update('withdrawals', id, { status: 'approved' });
+            loadWithdrawals();
+            alert('✅ Approved');
+        }
+
+        function rejectWD(id) {
+            if (!confirm('Reject?')) return;
+            const w = DB.findById('withdrawals', id);
+            if (w) {
+                const u = DB.findById('users', w.idUser);
+                if (u) DB.update('users', u.id, { points: u.points + w.pointsUsed, withdrawalCount: Math.max(0, u.withdrawalCount - 1) });
+            }
+            DB.update('withdrawals', id, { status: 'rejected' });
+            loadWithdrawals();
+            alert('❌ Rejected');
+        }
+
+        function releaseWD(id) {
+            const w = DB.findById('withdrawals', id);
+            if (!w) return;
+            DB.update('withdrawals', id, { status: 'released', releaseDate: new Date().toISOString() });
+            const u = DB.findById('users', w.idUser);
+            if (u) DB.update('users', u.id, { withdrawalCount: Math.max(0, u.withdrawalCount - 1) });
+            loadWithdrawals();
+            alert('✅ Released');
+        }
+
+        function postAnnouncement(e) {
+            e.preventDefault();
+            const title = document.getElementById('annTitle').value.trim();
+            const content = document.getElementById('annContent').value.trim();
+            const priority = parseInt(document.getElementById('annPriority').value);
+            if (!title || !content) { alert('Fill all fields!'); return; }
+            DB.insert('announcements', { title, content, priority, dateCreated: new Date().toISOString() });
+            document.getElementById('annTitle').value = '';
+            document.getElementById('annContent').value = '';
+            loadAdminAnnouncements();
+            alert('✅ Posted');
+        }
+
+        function loadAdminAnnouncements() {
+            const ann = DB.getAll('announcements').sort((a,b) => new Date(b.dateCreated) - new Date(a.dateCreated));
+            const list = document.getElementById('adminAnnouncementList');
+            if (ann.length === 0) { list.innerHTML = '<p>No announcements.</p>'; return; }
+            let html = `<table><tr><th>Title</th><th>Priority</th><th>Date</th><th>Action</th></tr>`;
+            ann.forEach(a => {
+                const p = a.priority === 1 ? '🔴 High' : a.priority === 2 ? '🟡 Medium' : '🟢 Low';
+                html += `<tr>
+                    <td><strong>${a.title}</strong></td>
+                    <td>${p}</td>
+                    <td>${new Date(a.dateCreated).toLocaleDateString()}</td>
+                    <td><button onclick="deleteAnn('${a.id}')" class="btn-sm btn-danger">🗑️</button></td>
+                </tr>`;
+            });
+            html += '</table>';
+            list.innerHTML = html;
+        }
+
+        function deleteAnn(id) {
+            if (!confirm('Delete?')) return;
+            DB.delete('announcements', id);
+            loadAdminAnnouncements();
+            alert('✅ Deleted');
+        }
+
+        function updateRate() {
+            const rate = document.getElementById('gsnRate').value;
+            if (!rate || isNaN(rate) || parseFloat(rate) <= 0) { alert('Invalid rate'); return; }
+            localStorage.setItem('gsnRate', rate);
+            document.getElementById('currentRate').textContent = '₱' + rate;
+            alert('✅ Rate updated to ₱' + rate);
+        }
+
+        function checkPromo() {
+            const today = new Date();
+            const start = new Date(document.getElementById('promoStart').value || '2026-07-11');
+            const end = new Date(document.getElementById('promoEnd').value || '2026-08-20');
+            const active = today >= start && today <= end;
+            const el = document.getElementById('promoStatus');
+            if (active) { el.textContent = '✅ Promo ACTIVE! ₱150'; el.style.color = '#2ecc71'; }
+            else { el.textContent = '⏳ Promo Inactive. ₱200'; el.style.color = '#7f8c8d'; }
+        }
+
+        function updatePromo() {
+            const start = document.getElementById('promoStart').value;
+            const end = document.getElementById('promoEnd').value;
+            if (!start || !end) { alert('Select dates!'); return; }
+            localStorage.setItem('promoStart', start);
+            localStorage.setItem('promoEnd', end);
+            checkPromo();
+            alert('✅ Promo dates updated');
+        }
+
+        function exportData() {
+            const data = {
+                users: DB.getAll('users'),
+                withdrawals: DB.getAll('withdrawals'),
+                announcements: DB.getAll('announcements'),
+                exported: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'gsn_backup.json'; a.click();
+            URL.revokeObjectURL(url);
+            alert('✅ Exported');
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (!confirm('This will replace all data. Continue?')) return;
+                        if (data.users) localStorage.setItem('users', JSON.stringify(data.users));
+                        if (data.withdrawals) localStorage.setItem('withdrawals', JSON.stringify(data.withdrawals));
+                        if (data.announcements) localStorage.setItem('announcements', JSON.stringify(data.announcements));
+                        alert('✅ Imported! Refreshing...');
+                        location.reload();
+                    } catch(err) { alert('❌ Invalid file'); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function clearData() {
+            if (!confirm('⚠️ Delete ALL data?')) return;
+            if (!confirm('Type "DELETE" to confirm')) return;
+            const confirmText = prompt('Type "DELETE":');
+            if (confirmText !== 'DELETE') return;
+            localStorage.removeItem('users');
+            localStorage.removeItem('withdrawals');
+            localStorage.removeItem('announcements');
+            localStorage.removeItem('initiated');
+            initDB();
+            alert('✅ Cleared! Refreshing...');
+            location.reload();
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active'));
+            document.querySelector('.sidebar a[onclick*="' + id + '"]').classList.add('active');
+            switch(id) {
+                case 'overview': loadOverview(); break;
+                case 'users': loadUsers(); break;
+                case 'withdrawals': loadWithdrawals(); break;
+                case 'announcements': loadAdminAnnouncements(); break;
+                case 'settings': checkPromo(); break;
+            }
+        }
+
+        function logout() {
+            if (confirm('Logout?')) { localStorage.removeItem('currentUser'); window.location.href = 'login.html'; }
+        }
+    </script>
+</body>
+                          </html>
