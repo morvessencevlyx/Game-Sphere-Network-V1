@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game - Game Sphere Network</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f1a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid #3498db;
+        }
+        .nav-brand { font-size: 22px; font-weight: bold; cursor: pointer; }
+        .nav-brand a { color: white; text-decoration: none; }
+        .nav-user { display: flex; align-items: center; gap: 15px; font-size: 14px; }
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-logout:hover { background: #c0392b; }
+        .btn-back {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .btn-back:hover { background: #1a252f; }
+
+        .game-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 15px;
+        }
+
+        /* HEADER */
+        .game-header {
+            background: linear-gradient(135deg, #1a1a2e, #2c3e50);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #3498db33;
+        }
+        .game-header h1 { font-size: 28px; color: #fff; }
+        .game-header .sub { color: #95a5a6; font-size: 14px; margin-top: 5px; }
+
+        /* SCORE BAR */
+        .score-bar {
+            background: #1a1a2e;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px solid #3498db33;
+        }
+        .score-bar .score { font-size: 22px; font-weight: bold; color: #f1c40f; }
+        .score-bar .score span { color: #fff; }
+        .score-bar .progress { color: #95a5a6; font-size: 14px; }
+        .score-bar .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2ecc71;
+            background: #0f0f1a;
+            padding: 5px 20px;
+            border-radius: 50px;
+            border: 2px solid #2ecc71;
+            min-width: 70px;
+            text-align: center;
+        }
+        .score-bar .timer.warning { color: #f39c12; border-color: #f39c12; }
+        .score-bar .timer.danger { color: #e74c3c; border-color: #e74c3c; animation: pulse 0.5s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* CATEGORY SELECT */
+        .category-select {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #3498db33;
+        }
+        .category-select h3 { margin-bottom: 15px; color: #fff; }
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .cat-btn {
+            padding: 15px;
+            border: 2px solid #2c3e50;
+            border-radius: 10px;
+            background: #0f0f1a;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .cat-btn:hover:not(.locked) { border-color: #3498db; background: #1a2a3e; }
+        .cat-btn.completed { border-color: #2ecc71; background: #1a3a2a; }
+        .cat-btn.completed::after { content: ' ✅'; }
+        .cat-btn.locked { opacity: 0.4; cursor: not-allowed; }
+        .cat-btn.active { border-color: #f1c40f; background: #2a2a1a; }
+
+        /* QUESTION CARD */
+        .question-card {
+            background: #1a1a2e;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #3498db33;
+            display: none;
+        }
+        .question-card.active { display: block; }
+
+        .question-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #ecf0f1;
+            line-height: 1.8;
+        }
+        .question-text .category-tag {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 2px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .question-text .q-number {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+
+        /* RESPONSES (auto-play) */
+        .responses {
+            display: grid;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .response-item {
+            padding: 14px 18px;
+            border: 2px solid #2c3e50;
+            border-radius: 10px;
+            background: #0f0f1a;
+            color: #ecf0f1;
+            font-size: 15px;
+            transition: 0.3s;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeInUp 0.3s forwards;
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .response-item.active-response {
+            border-color: #f1c40f;
+            background: #2a2a1a;
+        }
+        .response-item.current {
+            border-color: #3498db;
+            background: #1a2a3e;
+            box-shadow: 0 0 20px #3498db33;
+        }
+        .response-item.finished {
+            border-color: #2ecc71;
+            background: #1a3a2a;
+        }
+
+        /* OPTIONS (choices) */
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        @media (max-width: 500px) {
+            .options { grid-template-columns: 1fr; }
+        }
+        .option-btn {
+            padding: 14px;
+            border: 2px solid #2c3e50;
+            border-radius: 10px;
+            background: #0f0f1a;
+            color: #ecf0f1;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 500;
+            text-align: center;
+            font-size: 15px;
+        }
+        .option-btn:hover:not(.disabled) { border-color: #3498db; background: #1a2a3e; }
+        .option-btn.selected { border-color: #f1c40f; background: #2a2a1a; }
+        .option-btn.correct { border-color: #2ecc71; background: #1a3a2a; }
+        .option-btn.wrong { border-color: #e74c3c; background: #3a1a1a; }
+        .option-btn.disabled { cursor: not-allowed; opacity: 0.6; }
+
+        /* BUTTONS */
+        .btn-next {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+            display: none;
+        }
+        .btn-next:hover { background: #2980b9; }
+        .btn-next.show { display: inline-block; }
+
+        .btn-reset {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-reset:hover { background: #1a252f; }
+
+        /* RESULT */
+        .game-result {
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid #3498db33;
+            text-align: center;
+            display: none;
+        }
+        .game-result.active { display: block; }
+        .game-result .big-score { font-size: 56px; font-weight: bold; color: #f1c40f; }
+        .game-result .msg { color: #95a5a6; font-size: 16px; margin: 10px 0; }
+        .game-result .reward {
+            font-size: 24px;
+            color: #2ecc71;
+            margin: 15px 0;
+        }
+
+        /* PROGRESS BAR */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #2c3e50;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: width 1s linear;
+            width: 0%;
+            border-radius: 2px;
+        }
+
+        .response-timer {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+        .response-timer span { color: #f1c40f; font-weight: bold; }
+
+        .status-text {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .status-text.waiting { color: #f1c40f; }
+        .status-text.playing { color: #3498db; }
+        .status-text.answered { color: #2ecc71; }
+
+        @media (max-width: 600px) {
+            .game-container { padding: 10px; }
+            .question-card { padding: 20px; }
+            .question-text { font-size: 16px; }
+            .response-item { font-size: 13px; padding: 10px 14px; }
+            .option-btn { font-size: 13px; padding: 10px; }
+            .score-bar .timer { font-size: 20px; padding: 3px 14px; }
+            .game-header h1 { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand"><a href="member.html">🌠 GSN</a></div>
+        <div class="nav-user">
+            <a href="member.html" class="btn-back">← Dashboard</a>
+            <span id="usernameDisplay">User</span>
+            <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+    </nav>
+
+    <!-- GAME CONTAINER -->
+    <div class="game-container">
+
+        <!-- HEADER -->
+        <div class="game-header">
+            <h1>🧠 GAME SPHERE TRIVIA</h1>
+            <p class="sub">Answer correctly to earn points! Each question = ₱5 reward</p>
+        </div>
+
+        <!-- SCORE BAR -->
+        <div class="score-bar">
+            <div class="score">⭐ Score: <span id="scoreDisplay">0</span></div>
+            <div class="progress" id="progressDisplay">Question 0 / 25</div>
+            <div class="timer" id="timerDisplay">20s</div>
+        </div>
+
+        <!-- CATEGORY SELECT -->
+        <div class="category-select" id="categorySelect">
+            <h3>🎯 Select a Category</h3>
+            <div class="cat-grid" id="categoryGrid">
+                <!-- Generated by JS -->
+            </div>
+            <div style="margin-top:15px; text-align:center;">
+                <button onclick="resetGame()" class="btn-reset">🔄 Reset Game</button>
+            </div>
+        </div>
+
+        <!-- QUESTION CARD -->
+        <div class="question-card" id="questionCard">
+            <div class="question-text" id="questionText">
+                <span class="category-tag" id="categoryTag">Category</span>
+                <p id="questionContent" style="margin-top:10px;">Loading question...</p>
+            </div>
+
+            <div class="progress-bar">
+                <div class="fill" id="responseProgress"></div>
+            </div>
+
+            <div class="response-timer" id="responseTimer">⏱️ Next response in <span id="responseCountdown">20</span>s</div>
+
+            <div id="statusText" class="status-text waiting">⏳ Waiting for responses...</div>
+
+            <div class="responses" id="responsesContainer">
+                <!-- Generated by JS -->
+            </div>
+
+            <div class="options" id="optionsContainer">
+                <!-- Generated by JS -->
+            </div>
+
+            <button class="btn-next" id="nextBtn" onclick="nextQuestion()">Next Question ➜</button>
+        </div>
+
+        <!-- RESULT -->
+        <div class="game-result" id="gameResult">
+            <h2>🏆 Game Complete!</h2>
+            <div class="big-score" id="finalScore">0</div>
+            <p class="msg">Total Points Earned</p>
+            <div class="reward" id="finalReward">₱0</div>
+            <p style="color:#95a5a6; margin:10px 0;" id="resultStats">0/25 correct</p>
+            <button onclick="resetGame()" class="btn-reset" style="margin-top:15px;">🔄 Play Again</button>
+        </div>
+
+    </div>
+
+    <script>
+        // ============================================
+        // GAME DATA - 5 Categories × 5 Questions Each
+        // ============================================
+
+        const GAME_DATA = {
+            categories: [
+                {
+                    id: 'catch',
+                    name: '🧠 WHAT\'S THE CATCH?',
+                    icon: '🧠',
+                    questions: [
+                        {
+                            responses: [
+                                "🏃 Sumasali ka sa isang race at naunahan mo ang taong nasa 2nd place. Aba, bilis mo naman bigla. 😭",
+                                "🥇 Feeling mo nasa 1st place ka na agad. Relax ka lang muna. 👀",
+                                "🤔 Tandaan mo kung anong pwesto ng taong nilampasan mo.",
+                                "🏃 Hindi mo naman nalampasan ang nasa unahan niya.",
+                                "😏 May catch sa tanong—baka excited ka lang maging champion.",
+                                "🏁 Final answer! Kung nalampasan mo ang nasa 2nd place, anong pwesto mo na?"
+                            ],
+                            options: ["🥇 1ST PLACE", "🥈 2ND PLACE", "🥉 3RD PLACE"],
+                            correct: 1,
+                            answer: "🥈 2ND PLACE"
+                        },
+                        {
+                            responses: [
+                                "🐓 May tandang na nakatayo sa bubong nang biglang may 'itlog' na gumulong. Teka lang... may mali yata. 😭",
+                                "🏠 Pahilis ang bubong—kaliwa at kanan puwedeng gumulong ang itlog.",
+                                "🌬️ May hangin din, pero huwag ka munang mag-compute ng direction. 😭",
+                                "🐓 Ang importanteng detail ay kung anong klaseng manok ang nasa bubong.",
+                                "👀 Basahin mo ulit sa isip mo: TANDANG.",
+                                "🥚 So saan gugulong ang itlog ng tandang?"
+                            ],
+                            options: ["⬅️ KALIWA", "➡️ KANAN", "❌ WALANG ITLOG"],
+                            correct: 2,
+                            answer: "❌ WALANG ITLOG"
+                        },
+                        {
+                            responses: [
+                                "☔ Lumabas si Marco habang sobrang lakas ng ulan—walang payong at walang sumbrero. Matapang yarn? 😭",
+                                "🌧️ Basang-basa ang damit niya pagdating sa bahay.",
+                                "👟 Pati sapatos niya, basa rin. Wala nang ligtas.",
+                                "😏 Pero kahit isang buhok niya, hindi nabasa.",
+                                "🧠 Hindi siya gumamit ng magic at hindi rin siya nasa ilalim ng bubong.",
+                                "👨 Final answer—bakit hindi nabasa ang buhok niya?"
+                            ],
+                            options: ["🧑‍🦲 KALBO SIYA", "🏃 MABILIS SIYANG TUMAKBO", "🧴 WATERPROOF ANG BUHOK"],
+                            correct: 0,
+                            answer: "🧑‍🦲 KALBO SIYA"
+                        },
+                        {
+                            responses: [
+                                "🚗 May driver na dumaan sa one-way street sa maling direksyon, pero hindi siya pinara ng pulis. Aba, VIP? 😭",
+                                "👮 Nakita siya mismo ng pulis.",
+                                "🚨 Hindi sira ang traffic sign at hindi rin siya absent-minded ang pulis.",
+                                "👀 Ang catch ay nasa ginagawa ng 'driver' noong oras na iyon.",
+                                "🚶 Hindi lahat ng driver ay laging nagmamaneho.",
+                                "🤔 Bakit hindi siya pinara ng pulis?"
+                            ],
+                            options: ["🚶 NAGLALAKAD LANG SIYA", "🚗 SOBRANG BILIS NIYA", "👮 KAIBIGAN NIYA ANG PULIS"],
+                            correct: 0,
+                            answer: "🚶 NAGLALAKAD LANG SIYA"
+                        },
+                        {
+                            responses: [
+                                "🍎 May 5 mansanas sa mesa. Kumuha ka ng 2—simple lang daw, pero baka ma-overthink mo pa. 😭",
+                                "🔢 Huwag muna automatic mag-subtract. May catch tayo rito. 👀",
+                                "✋ Ikaw mismo ang kumuha ng dalawang mansanas.",
+                                "🍎 Ang tanong ay hindi kung ilan ang naiwan sa mesa.",
+                                "😭 Baka 3 na agad ang sagot mo—nahuli ka ba?",
+                                "🍎 Kung kumuha KA ng 2 mansanas, ilan ang mansanas na nasa iyo?"
+                            ],
+                            options: ["2", "3", "5"],
+                            correct: 0,
+                            answer: "2"
+                        }
+                    ]
+                },
+                {
+                    id: 'identity',
+                    name: '🎭 SECRET IDENTITY',
+                    icon: '🎭',
+                    questions: [
+                        {
+                            responses: [
+                                "🌙 Isang gabi, may misteryosong nilalang na biglang lumipad palabas ng kuweba—hindi man lang nagpaalam. 😭",
+                                "😴 Habang tulog ang karamihan, siya naman ang gising. Night shift yarn?",
+                                "🪽 May pakpak siya at kayang lumipad—pero teka, huwag masyadong confident. 👀",
+                                "🐦 Akala mo ibon? Sorry, pero ekis ka diyan. ❌😭",
+                                "🔊 Hindi niya kailangan ng Google Maps—echolocation ang navigation niya. 😎",
+                                "🪨 Madalas siyang tumatambay sa kuweba. Final answer mo na 'to, baka mapahiya ka pa. 😭"
+                            ],
+                            options: ["🦇 PANIKI", "🦉 KUWAGO", "🦅 AGILA"],
+                            correct: 0,
+                            answer: "🦇 PANIKI"
+                        },
+                        {
+                            responses: [
+                                "🏠 Pag-uwi mo, may nakita kang nakahiga sa sofa na parang siya ang nagbabayad ng bills sa bahay. 😭",
+                                "😴 Talent niya ang matulog buong araw kahit wala naman siyang night shift.",
+                                "📦 Bilhan mo ng mamahaling higaan, pero karton pa rin ang pipiliin. Sulit gastos mo. 😭",
+                                "🐾 Apat ang paa niya at tahimik kung maglakad.",
+                                "😾 Minsan sweet, minsan galit sa mundo. Depende yata sa mood.",
+                                "🐟 Mahilig sa isda at 'meow' ang ambag sa conversation. Kilala mo na ba siya?"
+                            ],
+                            options: ["🐶 ASO", "🐱 PUSA", "🐰 KUNEHO"],
+                            correct: 1,
+                            answer: "🐱 PUSA"
+                        },
+                        {
+                            responses: [
+                                "📱 Isang araw, nahulog siya mula sa kamay mo at parang pati kaluluwa mo sumunod sa pagbagsak. 😭",
+                                "🔋 Kapag lowbat siya, bigla ka ring nawawalan ng gana sa buhay.",
+                                "📸 Siya ang dahilan kung bakit may 47 selfies ka na halos pare-pareho.",
+                                "💬 Dito ka nagcha-chat, tumatawag, at minsan nagse-seen lang. 👀",
+                                "📶 Kapag walang internet, tititigan mo na lang siya na parang may kasalanan.",
+                                "🔌 Lagi mong hinahanap ang charger niya bago ka pa maghanap ng peace of mind. Ano siya?"
+                            ],
+                            options: ["📱 CELLPHONE", "📺 TELEVISION", "🖨️ PRINTER"],
+                            correct: 0,
+                            answer: "📱 CELLPHONE"
+                        },
+                        {
+                            responses: [
+                                "🌧️ Lumabas kang nakaayos, tapos biglang umulan—parang may personal na galit sa outfit mo ang panahon. 😭",
+                                "✋ Isang kamay lang ang kailangan para hawakan siya.",
+                                "⬆️ Binubuksan siya sa ibabaw ng ulo mo.",
+                                "☀️ Hindi lang ulan ang kalaban niya—pwede rin sa matinding araw.",
+                                "💨 Pero kapag malakas ang hangin, minsan siya pa ang kailangang iligtas. 😭",
+                                "🌧️ Proteksyon mo siya sa ulan, basta hindi mo naiwan sa bahay. Ano siya?"
+                            ],
+                            options: ["☂️ PAYONG", "🧢 SUMBRERO", "🎒 BAG"],
+                            correct: 0,
+                            answer: "☂️ PAYONG"
+                        },
+                        {
+                            responses: [
+                                "⏰ Mahimbing ang tulog mo nang bigla siyang tumunog—at doon nagsimula ang sama ng loob mo ngayong araw. 😭",
+                                "🔊 Trabaho niyang gumawa ng ingay sa oras na ayaw mong makarinig ng kahit ano.",
+                                "😴 Pinapatay mo siya, tapos sasabihin mong 'five minutes lang.'",
+                                "🕐 Pero ang five minutes mo, minsan nagiging isang oras. Magic yarn? 😭",
+                                "📅 Siya ang dahilan kung bakit minsan nakakabangon ka on time—emphasis sa *minsan*.",
+                                "🔔 Gigisingin ka niya kahit ayaw mo sa katotohanan. Ano ang secret identity niya?"
+                            ],
+                            options: ["⏰ ALARM CLOCK", "🎧 HEADPHONES", "🔦 FLASHLIGHT"],
+                            correct: 0,
+                            answer: "⏰ ALARM CLOCK"
+                        }
+                    ]
+                },
+                {
+                    id: 'plot',
+                    name: '🎲 PLOT TWIST!',
+                    icon: '🎲',
+                    questions: [
+                        {
+                            responses: [
+                                "🌙 Alas-dose na ng gabi nang makarinig ka ng malakas na kalabog sa kusina. Siyempre, ikaw ang inutusan tumingin. 😭",
+                                "👣 Dahan-dahan kang lumapit habang iniisip kung kailangan mo pa bang bumalik sa kwarto.",
+                                "🚪 Pagbukas mo ng pinto, may gumalaw sa ilalim ng mesa.",
+                                "😨 Biglang nahulog ang isang plato. Okay, gusto mo na talagang umalis.",
+                                "👀 May nakita kang dalawang matang nakatingin sa'yo mula sa dilim.",
+                                "🐾 Biglang may narinig kang 'meow.' Ayun lang pala! Ano ang nasa ilalim ng mesa?"
+                            ],
+                            options: ["👻 MULTO", "🐱 PUSA", "🐀 DAGA"],
+                            correct: 1,
+                            answer: "🐱 PUSA"
+                        },
+                        {
+                            responses: [
+                                "📱 Pagkagising mo, 99+ notifications agad ang bumungad sa'yo. Hindi ka pa nakakapaghilamos, may problema ka na. 😭",
+                                "💬 Puro message ng mga kaibigan mo ang nakikita mo.",
+                                "😂 May tumatawa, may nagugulat, at may nagsasabing 'DELETE MO NA!'",
+                                "🤨 Wala ka namang maalalang ginawa kagabi... medyo nakakatakot na.",
+                                "📸 Pagbukas mo ng group chat, nakita mo ang selfie mong tulog at nakanganga.",
+                                "😭 Plot twist: Nahiram pala ng kapatid mo ang phone mo. Ano ang ginawa niya?"
+                            ],
+                            options: ["📸 SINEND ANG PICTURE MO SA GC", "🗑️ BINURA ANG GC", "🔒 PINALITAN ANG PASSWORD"],
+                            correct: 0,
+                            answer: "📸 SINEND ANG PICTURE MO SA GC"
+                        },
+                        {
+                            responses: [
+                                "🍗 Buong araw mong iniisip ang fried chicken na itinabi mo sa ref. Motivation mo na nga siyang umuwi. 😭",
+                                "🏃 Pagdating mo sa bahay, diretso ka agad sa kusina.",
+                                "🚪 Binuksan mo ang ref nang may malaking ngiti.",
+                                "😐 Pero walang fried chicken. Pati ngiti mo nawala.",
+                                "🍽️ Nakita mong may bagong hugas na plato sa lababo.",
+                                "👀 Tapos lumabas ang kapatid mong may hawak na buto ng manok. Ano ang plot twist?"
+                            ],
+                            options: ["🐔 NABUHAY ANG MANOK", "😭 KINAIN NG KAPATID MO", "🧊 NASA FREEZER LANG"],
+                            correct: 1,
+                            answer: "😭 KINAIN NG KAPATID MO"
+                        },
+                        {
+                            responses: [
+                                "💸 Habang naglalakad ka, may nakita kang ₱500 sa sahig. Biglang gumanda ang araw mo. 😭",
+                                "👀 Tumingin ka muna sa kaliwa at kanan. Walang tao.",
+                                "🚶 Lumapit ka nang dahan-dahan na parang may mission.",
+                                "✋ Yumuko ka na para pulutin ito.",
+                                "💨 Pero biglang gumalaw palayo ang pera. Teka... bakit tumatakbo ang biyaya?",
+                                "🧵 Napansin mong may tali pala ito habang may tumatawa sa malayo. Ano ang plot twist?"
+                            ],
+                            options: ["💰 MAGIC ANG PERA", "😂 PRANK LANG PALA", "🌬️ TINANGAY NG HANGIN"],
+                            correct: 1,
+                            answer: "😂 PRANK LANG PALA"
+                        },
+                        {
+                            responses: [
+                                "🎁 Pag-uwi mo, may malaking kahon sa sala na may pangalan mo. Aba, may pa-surprise! 👀",
+                                "🤩 Excited kang lumapit dahil mabigat ang kahon.",
+                                "📦 Inalog mo nang kaunti pero walang tunog.",
+                                "🎀 Dahan-dahan mong binuksan habang nakatingin ang buong pamilya.",
+                                "😳 Pag-angat mo ng takip... isa pang kahon ang nasa loob.",
+                                "📦 Pagkatapos ng limang kahon, isang kendi lang pala ang laman. Ano ang plot twist?"
+                            ],
+                            options: ["📱 MAY PHONE SA ILALIM", "🍬 ISANG KENDI LANG TALAGA", "💵 PUNO NG PERA"],
+                            correct: 1,
+                            answer: "🍬 ISANG KENDI LANG TALAGA"
+                        }
+                    ]
+                },
+                {
+                    id: 'logic',
+                    name: '🧩 LOGIC TRAP',
+                    icon: '🧩',
+                    questions: [
+                        {
+                            responses: [
+                                "🔢 May 10 ibon sa puno. Binaril mo ang isa. Ilan ang natira? Simple lang daw. 😭",
+                                "💥 Ang ingay ng baril—lahat ng ibon ay lilipad palayo.",
+                                "🔫 Hindi mo kailangan ng math para dito.",
+                                "🤔 Kung isa lang ang binaril mo, bakit walang natira?",
+                                "🧠 Ang tanong ay trick—huwag kang magbilang ng patay na ibon.",
+                                "🐦 Ilan ang ibon na natira sa puno?"
+                            ],
+                            options: ["0", "9", "1"],
+                            correct: 0,
+                            answer: "0"
+                        },
+                        {
+                            responses: [
+                                "🕐 Kung ang orasan ay 3:15, anong anggulo ang nabubuo ng oras at minuto? 😭",
+                                "🔢 Huwag agad mag-compute—may catch ang tanong na 'to.",
+                                "🧮 3:15 means 15 minutes past 3.",
+                                "⏰ Ang oras ay nasa pagitan ng 3 at 4.",
+                                "📐 Ang minuto ay nasa 3 (15 minutes).",
+                                "🔢 So ilang degrees ang anggulo ng oras at minuto?"
+                            ],
+                            options: ["0°", "7.5°", "15°"],
+                            correct: 1,
+                            answer: "7.5°"
+                        },
+                        {
+                            responses: [
+                                "🏠 May bahay na apat ang sulok. Bawat sulok ay may pusa. Bawat pusa ay may 3 kuting. Ilang pusa ang nasa bahay? 😭",
+                                "🐱 Simple lang yata—pero baka may mali.",
+                                "🧮 Bilangin mo muna ang sulok ng bahay.",
+                                "🐈 Bawat sulok ay may pusa, so apat ang pusa.",
+                                "🐾 Bawat pusa may 3 kuting, so 3 × 4 = 12 kuting.",
+                                "🐱 Ilan ang kabuuang pusa sa bahay?"
+                            ],
+                            options: ["4", "12", "16"],
+                            correct: 0,
+                            answer: "4"
+                        },
+                        {
+                            responses: [
+                                "🧑‍🦳 Si Maria ay may 5 anak. Ang panganay ay si Juan, ang bunso ay si Pedro. Ano ang pangalan ng pangatlong anak? 😭",
+                                "🤔 Parang kulang ang info—teka, baka may catch.",
+                                "👀 Basahin mong mabuti ang pangalan ng mga anak.",
+                                "🧑‍🦳 Si Maria ang nanay, hindi siya kasali sa bilang.",
+                                "😏 Baka nalilito ka na sa dami ng anak.",
+                                "❓ Ano ang pangalan ng pangatlong anak ni Maria?"
+                            ],
+                            options: ["JUAN", "PEDRO", "HINDI ALAM"],
+                            correct: 2,
+                            answer: "HINDI ALAM"
+                        },
+                        {
+                            responses: [
+                                "🔦 May 3 ilaw sa kwarto at 3 switch sa labas. Isang beses ka lang pwedeng pumasok. Paano mo malalaman kung aling switch ang aling ilaw? 😭",
+                                "💡 Hindi mo kailangan ng sobrang talino—common sense lang.",
+                                "🔌 Bawat switch ay may kanya-kanyang ilaw.",
+                                "🕯️ Ang ilaw na nakabukas ay mainit—yun ang clue!",
+                                "🚪 Isang beses ka lang pwedeng pumasok, kaya gawin mong tama.",
+                                "💡 Aling switch ang para sa aling ilaw?"
+                            ],
+                            options: ["🔄 SUBUKAN LAHAT", "🌡️ DAMHIN ANG INIT", "🔢 BILANGIN ANG ILAW"],
+                            correct: 1,
+                            answer: "🌡️ DAMHIN ANG INIT"
+                        }
+                    ]
+                },
+                {
+                    id: 'mind',
+                    name: '🧠 MIND BENDER',
+                    icon: '🧠',
+                    questions: [
+                        {
+                            responses: [
+                                "🪞 May salamin sa harap mo. Bakit hindi mo makita ang likod ng ulo mo sa salamin? 😭",
+                                "🪞 Kaya nga salamin—reflection lang ang nakikita.",
+                                "😏 Hindi mo kailangan ng sobrang talino para dito.",
+                                "🧠 Ang likod ng ulo mo ay nasa likod—hindi mo 'yon nakikita.",
+                                "🤔 Ang salamin ay nagre-reflect ng harap, hindi ng likod.",
+                                "🪞 Bakit hindi mo makita ang likod ng ulo mo?"
+                            ],
+                            options: ["🪞 NASA LIKOD ITO", "🔮 MAGIC ANG SALAMIN", "👀 HINDI KA NAKATINGIN"],
+                            correct: 0,
+                            answer: "🪞 NASA LIKOD ITO"
+                        },
+                        {
+                            responses: [
+                                "🏃 Ang isang tren ay bumibiyahe ng 100 km/h papuntang hilaga. Saan galing ang usok? 😭",
+                                "🚂 Ang tren ay may usok—pero teka, may mali yata.",
+                                "💨 Ang usok ay lumalabas sa tsimenea ng tren.",
+                                "🧐 Ang tren ay tumatakbo papuntang hilaga.",
+                                "🔋 Pero ang tanong ay tungkol sa usok—hindi sa direction.",
+                                "💨 Saan galing ang usok ng tren?"
+                            ],
+                            options: ["🚂 MULA SA TREN", "🌬️ MULA SA HILAGA", "❌ WALANG USOK"],
+                            correct: 2,
+                            answer: "❌ WALANG USOK"
+                        },
+                        {
+                            responses: [
+                                "✈️ May eroplano na bumagsak sa border ng dalawang bansa. Saan ililibing ang mga nakaligtas? 😭",
+                                "🤔 Ang tanong ay tungkol sa mga nakaligtas—hindi sa mga namatay.",
+                                "🏥 Ang mga nakaligtas ay buhay—hindi sila ililibing.",
+                                "😅 Baka nalilito ka—ang tanong ay trick talaga.",
+                                "🪦 Ang mga nakaligtas ay hindi patay, kaya hindi ililibing.",
+                                "🪦 Saan ililibing ang mga nakaligtas?"
+                            ],
+                            options: ["🇵🇭 SA PILIPINAS", "🇺🇸 SA AMERIKA", "❌ HINDI ILILIBING"],
+                            correct: 2,
+                            answer: "❌ HINDI ILILIBING"
+                        },
+                        {
+                            responses: [
+                                "🛑 Ano ang tawag sa driver ng sasakyan na walang lisensya? 😭",
+                                "🚗 Ang driver ay nagmamaneho ng sasakyan.",
+                                "📄 Ang lisensya ay kailangan para magmaneho—pero teka.",
+                                "🤔 May catch ang tanong—baka may ibang sagot.",
+                                "👮 Ang walang lisensya ay ilegal—pero hindi 'yun ang tanong.",
+                                "🚗 Ano ang tawag sa driver na walang lisensya?"
+                            ],
+                            options: ["🚗 DRIVER", "👮 ILEGAL", "🚶 PASAHERO"],
+                            correct: 0,
+                            answer: "🚗 DRIVER"
+                        },
+                        {
+                            responses: [
+                                "🍞 May 3 pirasong tinapay sa mesa. Kumuha ka ng 2. Ilan ang tinapay mo? 😭",
+                                "🍞 Ang tanong ay kung ilan ang nasa IYO, hindi ang naiwan.",
+                                "🤔 Baka naisip mo na 1 ang natira—pero mali 'yan.",
+                                "✋ Ikaw mismo ang kumuha ng 2 pirasong tinapay.",
+                                "🍞 Kaya ang tinapay na nasa iyo ay 2.",
+                                "🍞 Ilan ang tinapay mo?"
+                            ],
+                            options: ["1", "2", "3"],
+                            correct: 1,
+                            answer: "2"
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // ============================================
+        // GAME STATE
+        // ============================================
+
+        let state = {
+            currentCategory: null,
+            currentQuestion: 0,
+            score: 0,
+            totalCorrect: 0,
+            totalQuestions: 0,
+            answered: false,
+            completedCategories: [],
+            lockedCategories: [],
+            currentResponseIndex: 0,
+            responseTimer: null,
+            isPlaying: false,
+            categoryOrder: []
+        };
+
+        const RESPONSE_INTERVAL = 20000; // 20 seconds per response
+
+        // ============================================
+        // DOM REFS
+        // ============================================
+
+        const $ = id => document.getElementById(id);
+        const scoreDisplay = $('scoreDisplay');
+        const progressDisplay = $('progressDisplay');
+        const timerDisplay = $('timerDisplay');
+        const categoryGrid = $('categoryGrid');
+        const questionCard = $('questionCard');
+        const categoryTag = $('categoryTag');
+        const questionContent = $('questionContent');
+        const responsesContainer = $('responsesContainer');
+        const optionsContainer = $('optionsContainer');
+        const nextBtn = $('nextBtn');
+        const gameResult = $('gameResult');
+        const finalScore = $('finalScore');
+        const finalReward = $('finalReward');
+        const resultStats = $('resultStats');
+        const statusText = $('statusText');
+        const responseCountdown = $('responseCountdown');
+        const responseProgress = $('responseProgress');
+        const usernameDisplay = $('usernameDisplay');
+
+        // ============================================
+        // INIT
+        // ============================================
+
+        window.onload = function() {
+            const userData = localStorage.getItem('currentUser');
+            if (!userData) {
+                window.location.href = 'login.html';
+                return;
+            }
+            const user = JSON.parse(userData);
+            usernameDisplay.textContent = user.username || 'User';
+            renderCategories();
+            updateScore();
+        };
+
+        // ============================================
+        // RENDER CATEGORIES
+        // ============================================
+
+        function renderCategories() {
+            const totalQ = GAME_DATA.categories.reduce((sum, cat) => sum + cat.questions.length, 0);
+            state.totalQuestions = totalQ;
+
+            categoryGrid.innerHTML = GAME_DATA.categories.map((cat, idx) => {
+                const completed = state.completedCategories.includes(cat.id);
+                const locked = state.lockedCategories.includes(cat.id);
+                return `
+                    <button class="cat-btn ${completed ? 'completed' : ''} ${locked ? 'locked' : ''}"
+                            onclick="startCategory('${cat.id}')"
+                            ${locked ? 'disabled' : ''}>
+                        ${cat.icon} ${cat.name}
+                        ${completed ? ' ✅' : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // ============================================
+        // START CATEGORY
+        // ============================================
+
+        function startCategory(categoryId) {
+            if (state.lockedCategories.includes(categoryId)) return;
+            if (state.completedCategories.includes(categoryId)) {
+                alert('✅ Category already completed!');
+                return;
+            }
+
+            const category = GAME_DATA.categories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            state.currentCategory = categoryId;
+            state.currentQuestion = 0;
+            state.answered = false;
+            state.isPlaying = false;
+            state.currentResponseIndex = 0;
+
+            // Hide result, show question
+            gameResult.classList.remove('active');
+            questionCard.classList.add('active');
+            nextBtn.classList.remove('show');
+
+            // Highlight active category
+            document.querySelectorAll('.cat-btn').forEach(el => el.classList.remove('active'));
+            const catBtns = document.querySelectorAll('.cat-btn');
+            catBtns.forEach(el => {
+                if (el.textContent.includes(category.name)) {
+                    el.classList.add('active');
+                }
+            });
+
+            // Hide category select
+            document.getElementById('categorySelect').style.display = 'none';
+
+            loadQuestion(category, 0);
+        }
+
+        // ============================================
+        // LOAD QUESTION
+        // ============================================
+
+        function loadQuestion(category, qIndex) {
+            if (qIndex >= category.questions.length) {
+                completeCategory(category);
+                return;
+            }
+
+            const question = category.questions[qIndex];
+            state.currentQuestion = qIndex;
+            state.answered = false;
+            state.isPlaying = false;
+            state.currentResponseIndex = 0;
+            state.totalCorrect = state.totalCorrect || 0;
+
+            // Update UI
+            categoryTag.textContent = `${category.icon} ${category.name}`;
+            questionContent.textContent = question.responses[0];
+
+            // Reset status
+            statusText.className = 'status-text waiting';
+            statusText.textContent = '⏳ Starting in 3... 2... 1...';
+
+            // Clear containers
+            responsesContainer.innerHTML = '';
+            optionsContainer.innerHTML = '';
+            nextBtn.classList.remove('show');
+
+            // Update progress
+            const total = GAME_DATA.categories.reduce((sum, c) => sum + c.questions.length, 0);
+            const done = GAME_DATA.categories
+                .filter(c => state.completedCategories.includes(c.id))
+                .reduce((sum, c) => sum + c.questions.length, 0);
+            const current = done + qIndex + 1;
+            progressDisplay.textContent = `Question ${current} / ${total}`;
+
+            // Build response items
+            question.responses.forEach((resp, idx) => {
+                const div = document.createElement('div');
+                div.className = 'response-item';
+                div.id = `response-${idx}`;
+                div.textContent = resp;
+                div.style.opacity = '0';
+                responsesContainer.appendChild(div);
+            });
+
+            // Build options
+            question.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.dataset.index = idx;
+                btn.onclick = () => selectOption(idx);
+                btn.id = `option-${idx}`;
+                optionsContainer.appendChild(btn);
+            });
+
+            // Show first response immediately
+            setTimeout(() => {
+                showResponse(0, question);
+            }, 500);
+        }
+
+        // ============================================
+        // SHOW RESPONSE (with 20s interval)
+        // ============================================
+
+        function showResponse(index, question) {
+            if (state.answered) return;
+            if (index >= question.responses.length) {
+                // All responses shown, show options
+                showOptions(question);
+                return;
+            }
+
+            state.currentResponseIndex = index;
+
+            // Update response items
+            const items = document.querySelectorAll('.response-item');
+            items.forEach((el, idx) => {
+                el.classList.remove('current', 'active-response', 'finished');
+                el.style.opacity = '1';
+                if (idx < index) {
+                    el.classList.add('finished');
+                } else if (idx === index) {
+                    el.classList.add('current');
+                } else {
+                    el.style.opacity = '0.3';
+                }
+            });
+
+            // Update question content
+            questionContent.textContent = question.responses[index];
+
+            // Update status
+            statusText.className = 'status-text playing';
+            statusText.textContent = `📖 Reading response ${index + 1}/${question.responses.length}...`;
+
+            // Update timer
+            let countdown = 20;
+            responseCountdown.textContent = countdown;
+            timerDisplay.textContent = countdown + 's';
+            timerDisplay.className = 'timer';
+
+            // Update progress bar
+            const progress = ((index + 1) / question.responses.length) * 100;
+            responseProgress.style.width = progress + '%';
+
+            // Clear existing timer
+            if (state.responseTimer) {
+                clearInterval(state.responseTimer);
+            }
+
+            // Start countdown
+            state.responseTimer = setInterval(() => {
+                countdown--;
+                responseCountdown.textContent = countdown;
+                timerDisplay.textContent = countdown + 's';
+
+                // Warning colors
+                if (countdown <= 5) {
+                    timerDisplay.className = 'timer danger';
+                } else if (countdown <= 10) {
+                    timerDisplay.className = 'timer warning';
+                } else {
+                    timerDisplay.className = 'timer';
+                }
+
+                if (countdown <= 0) {
+                    clearInterval(state.responseTimer);
+                    // Move to next response or show options
+                    if (index + 1 < question.responses.length) {
+                        showResponse(index + 1, question);
+                    } else {
+                        showOptions(question);
+                    }
+                }
+            }, 1000);
+        }
+
+        // ============================================
+        // SHOW OPTIONS
+        // ============================================
+
+        function showOptions(question) {
+            statusText.className = 'status-text playing';
+            statusText.textContent = '🤔 Choose your answer!';
+
+            // Enable options
+            document.querySelectorAll('.option-btn').forEach(el => {
+                el.classList.remove('disabled');
+                el.style.cursor = 'pointer';
+            });
+
+            // Clear timer
+            if (state.responseTimer) {
+                clearInterval(state.responseTimer);
+            }
+            timerDisplay.textContent = '⏳';
+            timerDisplay.className = 'timer';
+
+            // Highlight all responses as finished
+            document.querySelectorAll('.response-item').forEach(el => {
+                el.classList.add('finished');
+                el.classList.remove('current');
+            });
+
+            responseProgress.style.width = '100%';
+        }
+
+        // ============================================
+        // SELECT OPTION
+        // ============================================
+
+        function selectOption(index) {
+            if (state.answered) return;
+
+            const question = GAME_DATA.categories
+                .find(c => c.id === state.currentCategory)
+                .questions[state.currentQuestion];
+
+            state.answered = true;
+            state.isPlaying = false;
+
+            // Disable all options
+            document.querySelectorAll('.option-btn').forEach(el => {
+                el.classList.add('disabled');
+                el.style.cursor = 'not-allowed';
+            });
+
+            // Highlight selected
+            const selected = document.getElementById(`option-${index}`);
+            const isCorrect = index === question.correct;
+
+            // Show correct/wrong
+            document.querySelectorAll('.option-btn').forEach((el, idx) => {
+                if (idx === question.correct) {
+                    el.classList.add('correct');
+                } else if (idx === index && !isCorrect) {
+                    el.classList.add('wrong');
+                }
+                if (idx === index) {
+                    el.classList.add('selected');
+                }
+            });
+
+            // Update score
+            if (isCorrect) {
+                state.score += 1;
+                state.totalCorrect = (state.totalCorrect || 0) + 1;
+                statusText.className = 'status-text answered';
+                statusText.textContent = '✅ Correct! +1 point! 🎉';
+            } else {
+                statusText.className = 'status-text answered';
+                statusText.textContent = `❌ Wrong! The answer was: ${question.answer}`;
+            }
+
+            updateScore();
+
+            // Clear timer
+            if (state.responseTimer) {
+                clearInterval(state.responseTimer);
+            }
+
+            // Show next button
+            nextBtn.textContent = state.currentQuestion + 1 >= GAME_DATA.categories
+                .find(c => c.id === state.currentCategory).questions.length ?
+                '🏆 Finish Category' : 'Next Question ➜';
+            nextBtn.classList.add('show');
+        }
+
+        // ============================================
+        // NEXT QUESTION
+        // ============================================
+
+        function nextQuestion() {
+            const category = GAME_DATA.categories.find(c => c.id === state.currentCategory);
+            if (!category) return;
+
+            const nextQ = state.currentQuestion + 1;
+
+            if (nextQ >= category.questions.length) {
+                completeCategory(category);
+            } else {
+                loadQuestion(category, nextQ);
+            }
+        }
+
+        // ============================================
+        // COMPLETE CATEGORY
+        // ============================================
+
+        function completeCategory(category) {
+            state.completedCategories.push(category.id);
+            state.lockedCategories = state.lockedCategories.filter(id => id !== category.id);
+
+            // Check if all categories completed
+            const allDone = GAME_DATA.categories.every(c => state.completedCategories.includes(c.id));
+
+            if (allDone) {
+                showGameResult();
+            } else {
+                // Unlock next category
+                const currentIdx = GAME_DATA.categories.findIndex(c => c.id === category.id);
+                if (currentIdx + 1 < GAME_DATA.categories.length) {
+                    // Unlock next category
+                    const nextCat = GAME_DATA.categories[currentIdx + 1];
+                    state.lockedCategories = state.lockedCategories.filter(id => id !== nextCat.id);
+                }
+
+                // Show category select
+                document.getElementById('categorySelect').style.display = 'block';
+                questionCard.classList.remove('active');
+                renderCategories();
+
+                // Show completion message
+                alert(`✅ Category "${category.name}" completed!\nScore: ${state.score} points\n\nSelect another category to continue!`);
+            }
+
+            // Clear timer
+            if (state.responseTimer) {
+                clearInterval(state.responseTimer);
+            }
+        }
+
+        // ============================================
+        // SHOW GAME RESULT
+        // ============================================
+
+        function showGameResult() {
+            questionCard.classList.remove('active');
+            gameResult.classList.add('active');
+
+            const reward = state.score * 5; // ₱5 per correct answer
+            finalScore.textContent = state.score;
+            finalReward.textContent = `₱${reward}`;
+            resultStats.textContent = `${state.totalCorrect || 0}/${state.totalQuestions} correct`;
+
+            // Save to user's balance (optional)
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                const user = JSON.parse(userData);
+                // You can add logic to add reward to balance
+                // For now, just show
+            }
+        }
+
+        // ============================================
+        // RESET GAME
+        // ============================================
+
+        function resetGame() {
+            if (!confirm('Reset game? All progress will be lost!')) return;
+
+            state = {
+                currentCategory: null,
+                currentQuestion: 0,
+                score: 0,
+                totalCorrect: 0,
+                totalQuestions: state.totalQuestions || 0,
+                answered: false,
+                completedCategories: [],
+                lockedCategories: [],
+                currentResponseIndex: 0,
+                responseTimer: null,
+                isPlaying: false,
+                categoryOrder: []
+            };
+
+            // Lock all categories except first
+            GAME_DATA.categories.forEach((cat, idx) => {
+                if (idx > 0) {
+                    state.lockedCategories.push(cat.id);
+                }
+            });
+
+            document.getElementById('categorySelect').style.display = 'block';
+            questionCard.classList.remove('active');
+            gameResult.classList.remove('active');
+            renderCategories();
+            updateScore();
+
+            if (state.responseTimer) {
+                clearInterval(state.responseTimer);
+            }
+
+            progressDisplay.textContent = 'Question 0 / ' + state.totalQuestions;
+        }
+
+        // ============================================
+        // UPDATE SCORE
+        // ============================================
+
+        function updateScore() {
+            scoreDisplay.textContent = state.score;
+        }
+
+        // ============================================
+        // LOGOUT
+        // ============================================
+
+        function logout() {
+            if (confirm('Logout?')) {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // ============================================
+        // INITIALIZE - Lock categories except first
+        // ============================================
+
+        // Lock all categories except first
+        GAME_DATA.categories.forEach((cat, idx) => {
+            if (idx > 0) {
+                state.lockedCategories.push(cat.id);
+            }
+        });
+
+        console.log('🎮 Game Sphere Trivia loaded!');
+        console.log(`📚 ${GAME_DATA.categories.length} categories, ${state.totalQuestions} total questions`);
+        console.log('🔒 Categories locked:', state.lockedCategories);
+    </script>
+
+</body>
+  </html>
