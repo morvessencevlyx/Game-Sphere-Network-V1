@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Sphere Network</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 420px; width: 100%; }
+        .card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .card h1 { color: #1a1a2e; font-size: 28px; }
+        .card .sub { color: #7f8c8d; font-size: 14px; margin-top: 5px; }
+        .card .desc { color: #555; font-size: 14px; margin: 15px 0; }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 8px 5px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-secondary { background: #2c3e50; color: white; }
+        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
+        .footer {
+            margin-top: 25px;
+            color: #95a5a6;
+            font-size: 12px;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 15px;
+        }
+        .promo {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #856404;
+        }
+        .promo strong { color: #e67e22; }
+        .fee-box {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .fee-box span {
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        @media (max-width: 480px) {
+            .card { padding: 25px 15px; }
+            .card h1 { font-size: 22px; }
+            .btn { padding: 10px 20px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🌠 Game Sphere Network</h1>
+            <p class="sub">Membership System</p>
+
+            <div class="promo">
+                🎉 <strong>Birthday Promo!</strong> Only ₱150<br>
+                <small>July 11 - August 20, 2026</small>
+            </div>
+
+            <div class="fee-box">
+                <span>💰 Full: ₱200</span>
+                <span>💳 Down: ₱100</span>
+            </div>
+
+            <p class="desc">
+                🖱️ Earn ₱1 per click<br>
+                📌 Min: 500 pts = ₱200<br>
+                📌 Max: 1K pts + 1 invite = ₱500
+            </p>
+
+            <div>
+                <a href="login.html" class="btn btn-primary">Login</a>
+                <a href="register.html" class="btn btn-secondary">Register</a>
+            </div>
+
+            <div class="footer">
+                <p>📅 Launched: June 14, 2026</p>
+                <p>📋 Handled by: Owners / Co-Owners</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
